@@ -3,14 +3,13 @@ import 'package:meta/meta.dart';
 
 import 'cache_store.dart';
 
-typedef bool CacheResponseFilter(CacheResponse response);
+typedef CacheResponseFilter = bool Function(CacheResponse response);
 
 /// A store that will only [set] on [child] responses that matches
 /// the given [filter].
-/// 
+///
 /// All other operations are simply proxies to [child].
 class FilteredCacheStore extends CacheStore {
-
   final CacheStore child;
 
   final CacheResponseFilter filter;
@@ -29,7 +28,7 @@ class FilteredCacheStore extends CacheStore {
 
   @override
   Future<void> set(CacheResponse response) {
-    if(this.filter(response)) {
+    if (filter(response)) {
       return child.set(response);
     }
     return Future.value();

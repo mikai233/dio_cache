@@ -37,7 +37,7 @@ final dio = Dio()
 #### Sending a request with options
 
 ```dart
-final forcedResponse = await dio.get("http://www.flutter.dev", options: Options(
+final forcedResponse = await dio.get("https://www.baidu.com", options: Options(
     extra: CacheOptions(
       forceUpdate: true
     ).toExtra(),
@@ -53,7 +53,7 @@ interceptor.options.store.clean(CachePriority.low);
 #### Getting more info about caching status
 
 ```dart
-final response = await dio.get("http://www.flutter.dev");
+final response = await dio.get("https://www.baidu.com");
 final cachedResult = CacheResult.fromExtra(response);
 if(cachedResult.isFromCache) {
   print("expiry: ${cachedResult.cache.expiry}, downloadedAt: ${cachedResult.cache.downloadedAt}");

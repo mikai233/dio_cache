@@ -18,7 +18,7 @@ class FileCacheStore extends CacheStore {
   final Map<CachePriority, Directory> directories;
 
   FileCacheStore(Directory directory)
-      : this.directories =
+      : directories =
             Map.fromEntries(Iterable.generate(CachePriority.values.length, (i) {
           final priority = CachePriority.values[i];
           return MapEntry(priority,
@@ -67,7 +67,8 @@ class FileCacheStore extends CacheStore {
   @override
   Future<void> set(CacheResponse response) async {
     await delete(response.key);
-    final file = File(path.join(directories[response.priority].path, response.key));
+    final file =
+        File(path.join(directories[response.priority].path, response.key));
 
     if (!file.parent.existsSync()) {
       await file.parent.create(recursive: true);
@@ -77,12 +78,12 @@ class FileCacheStore extends CacheStore {
   }
 
   @override
-  Future<void> updateExpiry(
-      String key, DateTime newExpiry) async {
+  Future<void> updateExpiry(String key, DateTime newExpiry) async {
     final file = await _findFile(key);
     if (file != null) {
       final previous = await _deserializeCacheResponse(file);
-      final bytes = _serializeCacheResponse(previous.copyWith(expiry: newExpiry));
+      final bytes =
+          _serializeCacheResponse(previous.copyWith(expiry: newExpiry));
       await file.writeAsBytes(bytes);
     }
   }
@@ -90,7 +91,7 @@ class FileCacheStore extends CacheStore {
 
 List<int> _serializeCacheResponse(CacheResponse response) {
   final encodedUrl = utf8.encode(response.url);
-  final encodedEtag = utf8.encode(response.eTag ?? "");
+  final encodedEtag = utf8.encode(response.eTag ?? '');
   final encodedExpiry =
       Int32List.fromList([response.expiry.microsecondsSinceEpoch])
           .buffer
@@ -107,7 +108,6 @@ List<int> _serializeCacheResponse(CacheResponse response) {
 }
 
 Future<CacheResponse> _deserializeCacheResponse(File file) async {
-  
   final data = await file.readAsBytes();
 
   var i = 4 + 4 + 4;
@@ -135,7 +135,7 @@ Future<CacheResponse> _deserializeCacheResponse(File file) async {
     url: decodedUrl,
     eTag: decodedEtag,
     downloadedAt: await file.lastModified(),
-    method: path.basename(file.path).split("_")[0],
+    method: path.basename(file.path).split('_')[0],
     priority: CachePriority.values[int.parse(path.basename(file.parent.path))],
     content: decodedContent,
     expiry: DateTime.fromMillisecondsSinceEpoch(decodedExpiry),

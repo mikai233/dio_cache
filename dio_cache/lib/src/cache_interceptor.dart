@@ -5,9 +5,9 @@ import 'package:dio_cache/src/cache_response.dart';
 import 'package:dio_cache/src/stores/memory_cache_store.dart';
 import 'package:logging/logging.dart';
 
+import 'helpers/status_code.dart';
 import 'options.dart';
 import 'result.dart';
-import 'helpers/status_code.dart';
 import 'stores/cache_store.dart';
 
 class CacheInterceptor extends Interceptor {
@@ -16,15 +16,15 @@ class CacheInterceptor extends Interceptor {
   final CacheStore _globalStore;
 
   CacheInterceptor({CacheOptions options, this.logger})
-      : this.options = options ?? const CacheOptions(),
-        this._globalStore = options.store ?? MemoryCacheStore();
+      : options = options ?? const CacheOptions(),
+        _globalStore = options.store ?? MemoryCacheStore();
 
   CacheOptions _optionsForRequest(RequestOptions options) {
     return CacheOptions.fromExtra(options) ?? this.options;
   }
 
   @override
-  onRequest(RequestOptions options) async {
+  Future onRequest(RequestOptions options) async {
     final extraOptions = _optionsForRequest(options);
 
     if (!extraOptions.isCached) {
@@ -32,7 +32,7 @@ class CacheInterceptor extends Interceptor {
     }
 
     final cacheKey = extraOptions.keyBuilder(options);
-    assert(cacheKey != null, "The cache key builder produced an empty key");
+    assert(cacheKey != null, 'The cache key builder produced an empty key');
     final store = extraOptions.store ?? _globalStore;
     final existing = await store.get(cacheKey);
 
@@ -40,19 +40,19 @@ class CacheInterceptor extends Interceptor {
 
     if (extraOptions.forceUpdate) {
       logger
-          ?.fine("[$cacheKey][${options.uri}] Update forced, cache is ignored");
+          ?.fine('[$cacheKey][${options.uri}] Update forced, cache is ignored');
       return await super.onRequest(options);
     }
 
     if (existing == null) {
       logger?.fine(
-          "[$cacheKey][${options.uri}] No existing cache, starting a new request");
+          '[$cacheKey][${options.uri}] No existing cache, starting a new request');
       return await super.onRequest(options);
     }
 
     if (!extraOptions.forceCache && existing.expiry.isBefore(DateTime.now())) {
       logger?.fine(
-          "[$cacheKey][${options.uri}] Cache expired since ${existing.expiry}, starting a new request");
+          '[$cacheKey][${options.uri}] Cache expired since ${existing.expiry}, starting a new request');
       return await super.onRequest(options);
     }
 
@@ -60,14 +60,14 @@ class CacheInterceptor extends Interceptor {
   }
 
   @override
-  onError(DioError err) {
+  Future onError(DioError err) async {
     final extraOptions = _optionsForRequest(err.request);
     if (extraOptions.returnCacheOnError) {
       final existing = CacheResponse.fromError(err);
       if (existing != null) {
         final cacheKey = extraOptions.keyBuilder(err.request);
         logger?.warning(
-            "[$cacheKey][${err.request.uri}] An error occured, but using an existing cache : ${err.error}");
+            '[$cacheKey][${err.request.uri}] An error occured, but using an existing cache : ${err.error}');
         return existing;
       }
     }
@@ -76,7 +76,7 @@ class CacheInterceptor extends Interceptor {
   }
 
   @override
-  onResponse(Response response) async {
+  Future onResponse(Response response) async {
     final requestExtra = _optionsForRequest(response.request);
     final extras = CacheResult.fromExtra(response);
     final store = requestExtra.store ?? _globalStore;
@@ -94,7 +94,7 @@ class CacheInterceptor extends Interceptor {
         final newCache = await CacheResponse.fromResponse(
             cacheKey, response, expiry, requestExtra.priority);
         logger?.fine(
-            "[$cacheKey][${response.request.uri}] Creating a new cache entry than expires on  $expiry");
+            '[$cacheKey][${response.request.uri}] Creating a new cache entry than expires on  $expiry');
         await store.set(newCache);
       }
     }
